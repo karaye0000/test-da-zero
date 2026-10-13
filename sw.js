@@ -1,5 +1,5 @@
 (function museumWorker(){
-  const CONFIG={"version":"mv6ndr4j","shell":["./data/rooms.json","./css/style.css","./js/app.js","./images/3ab4b9b3-a9c4-4017-8905-adec929c5855.png","./images/partner-1.png","./images/partner-2.png","./images/partner-3.png","./images/partner-4.png","./images/partner-5.png","./index.html","./images/icon-192.png","./images/icon-512.png","./manifest.webmanifest","./README.md","./QR-links.csv"],"urls":["./data/rooms.json","./css/style.css","./js/app.js","./images/3ab4b9b3-a9c4-4017-8905-adec929c5855.png","./images/partner-1.png","./images/partner-2.png","./images/partner-3.png","./images/partner-4.png","./images/partner-5.png","./index.html","./images/icon-192.png","./images/icon-512.png","./manifest.webmanifest","./audio/1.mp3","./audio/11.mp3","./audio/ICECUBES - company profile 2026 ENG lowres.pdf","./audio/1300c_mse_sc_mma_liutong.jpg","./audio/1300c_mse_sc_mma_liutong-ritaglio.jpg","./audio/BELLEROFONTE, PEGASO E LA CHIMERA_ENG_1.mp4","./README.md","./QR-links.csv"]};
+  const CONFIG={"version":"mv6p7i71","shell":["./data/rooms.json","./css/style.css","./js/app.js","./images/3ab4b9b3-a9c4-4017-8905-adec929c5855.png","./images/partner-1.png","./images/partner-2.png","./images/partner-3.png","./images/partner-4.png","./images/partner-5.png","./index.html","./wayfinding/pannello-01/index.html","./piano-0/pannello-02/index.html","./piano-1/pannello-03/index.html","./piano-1/pannello-04/index.html","./piano-0/pannello-05/index.html","./images/icon-192.png","./images/icon-512.png","./manifest.webmanifest","./README.md","./QR-links.csv"],"urls":["./data/rooms.json","./css/style.css","./js/app.js","./images/3ab4b9b3-a9c4-4017-8905-adec929c5855.png","./images/partner-1.png","./images/partner-2.png","./images/partner-3.png","./images/partner-4.png","./images/partner-5.png","./index.html","./wayfinding/pannello-01/index.html","./piano-0/pannello-02/index.html","./piano-1/pannello-03/index.html","./piano-1/pannello-04/index.html","./piano-0/pannello-05/index.html","./images/icon-192.png","./images/icon-512.png","./manifest.webmanifest","./audio/1.mp3","./audio/11.mp3","./audio/ICECUBES - company profile 2026 ENG lowres.pdf","./audio/1300c_mse_sc_mma_liutong.jpg","./audio/1300c_mse_sc_mma_liutong-ritaglio.jpg","./audio/BELLEROFONTE, PEGASO E LA CHIMERA_ENG_1.mp4","./README.md","./QR-links.csv"]};
   const PREFIX='museumguide_'+encodeURIComponent(self.registration.scope)+'_';
   const CACHE=PREFIX+CONFIG.version;
   const urls=CONFIG.urls.map(u=>new URL(u,self.registration.scope).href);
@@ -8,12 +8,12 @@
   async function download(){
     if(running)return running;
     running=(async()=>{
-      const cache=await caches.open(CACHE);let done=0,failed=0;
+      const cache=await caches.open(CACHE);let done=0,failed=0;const failedFiles=[];
       for(const url of urls){
-        try{if(!await cache.match(url)){const res=await fetch(url,{cache:'reload'});if(!res.ok||res.status===206)throw Error('Download failed');await cache.put(url,res)}done++}catch(e){failed++}
+        try{if(!await cache.match(url)){const res=await fetch(url,{cache:'reload'});if(!res.ok||res.status===206)throw Error('HTTP '+res.status);await cache.put(url,res)}done++}catch(e){failed++;failedFiles.push({url,error:e.message || 'rete o spazio disponibile'});}
         await notify({type:'CACHE_PROGRESS',done,total:urls.length,failed});
       }
-      await notify({type:failed?'CACHE_ERROR':'CACHE_COMPLETE',done,total:urls.length,failed});
+      await notify({type:failed?'CACHE_ERROR':'CACHE_COMPLETE',done,total:urls.length,failed,failedFiles});
     })().catch(()=>notify({type:'CACHE_ERROR'})).finally(()=>{running=null});
     return running;
   }

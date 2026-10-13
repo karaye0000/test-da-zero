@@ -46,7 +46,8 @@
     ],
     "menuPinned": true,
     "id": "pannello-01",
-    "location": "",
+    "location": "wayfinding",
+    "filterLocation": "",
     "title": "1",
     "translations": {
       "it": {
@@ -96,7 +97,7 @@
         "url": "https://musei.geniusloci-mic.it/campania/23-villa-romana-di-minori/aree-villa/area05/xr"
       },
       {
-        "label": "Esplorazione modello 3d",
+        "label": "Esplorazione Modello 3D",
         "url": "https://musei.geniusloci-mic.it/campania/23-villa-romana-di-minori/aree-villa/area05/xr"
       },
       {
@@ -110,7 +111,8 @@
     "en_full": "<p>111</p>",
     "audio_it": "./audio/1.mp3",
     "audio_en": "./audio/11.mp3",
-    "smart_map": "https://musei.geniusloci-mic.it/campania/23-villa-romana-di-minori/aree-villa/area05/xr"
+    "smart_map": "https://musei.geniusloci-mic.it/campania/23-villa-romana-di-minori/aree-villa/area05/xr",
+    "path": "wayfinding/pannello-01/"
   },
   {
     "mainElements": [
@@ -136,6 +138,7 @@
     "menuPinned": false,
     "id": "pannello-02",
     "location": "Piano 0",
+    "filterLocation": "Piano 0",
     "title": "2",
     "translations": {
       "it": {
@@ -177,7 +180,8 @@
     "en_full": "<p>222</p>",
     "audio_it": "./audio/2.mp3",
     "audio_en": "./audio/22.mp3",
-    "smart_map": "https://musei.geniusloci-mic.it/campania/23-villa-romana-di-minori/aree-villa/area05/xr"
+    "smart_map": "https://musei.geniusloci-mic.it/campania/23-villa-romana-di-minori/aree-villa/area05/xr",
+    "path": "piano-0/pannello-02/"
   },
   {
     "mainElements": [
@@ -198,6 +202,7 @@
     "menuPinned": false,
     "id": "pannello-03",
     "location": "Piano 1",
+    "filterLocation": "Piano 1",
     "title": "3",
     "translations": {
       "it": {
@@ -242,7 +247,8 @@
     "en_full": "<p>333</p>",
     "audio_it": "./audio/pannello-03-it.mp3",
     "audio_en": "./audio/pannello-03-en.mp3",
-    "smart_map": "https://musei.geniusloci-mic.it/campania/23-villa-romana-di-minori/aree-villa/area05/xr"
+    "smart_map": "https://musei.geniusloci-mic.it/campania/23-villa-romana-di-minori/aree-villa/area05/xr",
+    "path": "piano-1/pannello-03/"
   },
   {
     "mainElements": [
@@ -263,6 +269,7 @@
     "menuPinned": false,
     "id": "pannello-04",
     "location": "Piano 1",
+    "filterLocation": "Piano 1",
     "title": "4",
     "translations": {
       "it": {
@@ -308,7 +315,8 @@
     "en_full": "<p>444</p>",
     "audio_it": "./audio/pannello-04-it.mp3",
     "audio_en": "./audio/pannello-04-en.mp3",
-    "smart_map": "https://musei.geniusloci-mic.it/campania/23-villa-romana-di-minori/aree-villa/area05/xr"
+    "smart_map": "https://musei.geniusloci-mic.it/campania/23-villa-romana-di-minori/aree-villa/area05/xr",
+    "path": "piano-1/pannello-04/"
   },
   {
     "mainElements": [
@@ -329,6 +337,7 @@
     "menuPinned": false,
     "id": "pannello-05",
     "location": "Piano 0",
+    "filterLocation": "Piano 0",
     "title": "5",
     "translations": {
       "it": {
@@ -362,7 +371,7 @@
     ],
     "links": [
       {
-        "label": "Esplorazione modello 3d",
+        "label": "Esplorazione Modello 3D",
         "url": "https://musei.geniusloci-mic.it/campania/23-villa-romana-di-minori/aree-villa/area05/xr"
       }
     ],
@@ -372,6 +381,7 @@
     "en_full": "<p>555</p>",
     "audio_it": "./audio/pannello-05-it.mp3",
     "audio_en": "./audio/pannello-05-en.mp3",
-    "smart_map": ""
+    "smart_map": "",
+    "path": "piano-0/pannello-05/"
   }
 ]

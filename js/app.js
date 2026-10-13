@@ -12,16 +12,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('Failed to load rooms.json:', error);
   }
 
+  document.addEventListener('play',event=>{if(!event.target.matches('audio,video'))return;document.querySelectorAll('audio,video').forEach(player=>{if(player!==event.target)player.pause();});},true);
   const get = id => document.getElementById(id);
+  function fitFooterLogos(){document.querySelectorAll('.footer-logo-row').forEach(row=>{const images=[...row.querySelectorAll('img')],gap=Math.min(parseFloat(getComputedStyle(row).getPropertyValue('--footer-block-gap'))||0,Math.max(0,row.clientWidth-images.length)/Math.max(1,images.length-1));row.style.gap=gap+'px';const desired=images.map(image=>({image,height:Number(image.dataset.logoHeight)||32,ratio:image.naturalWidth/Math.max(1,image.naturalHeight)}));if(desired.some(item=>!item.image.complete||!item.ratio))return;const width=desired.reduce((sum,item)=>sum+item.ratio*item.height,0),scale=Math.min(1,Math.max(1,row.clientWidth-gap*(images.length-1))/Math.max(1,width));desired.forEach(({image,height,ratio})=>{image.style.height=height*scale+'px';image.style.width=height*ratio*scale+'px';});});}
+  document.querySelectorAll('.footer-logo-row img').forEach(image=>image.addEventListener('load',fitFooterLogos));window.addEventListener('resize',fitFooterLogos);if(typeof ResizeObserver!=='undefined')document.querySelectorAll('.footer-logo-row').forEach(row=>new ResizeObserver(fitFooterLogos).observe(row));fitFooterLogos();
   const updateHeaderHeight = () => document.documentElement.style.setProperty('--header-height', get('top').offsetHeight + 'px');
   updateHeaderHeight();
   if (typeof ResizeObserver !== 'undefined') new ResizeObserver(updateHeaderHeight).observe(get('top'));
   else window.addEventListener('resize', updateHeaderHeight);
   const params = new URLSearchParams(window.location.search);
-  const roomId = (preview ? MUSEUM_PREVIEW.roomId : params.get('room')) || (rooms.length ? rooms[0].id : null);
+  const roomId = (preview ? MUSEUM_PREVIEW.roomId : document.body.dataset.room || params.get('room')) || (rooms.length ? rooms[0].id : null);
   function renderRoom(id) {
     const room = rooms.find(room => room.id === id);
     if (!room) return;
+    document.querySelectorAll('audio,video').forEach(player=>player.pause());
     get('roomTitle').innerHTML = room.title;
     get('roomTexts').replaceChildren();
     get('roomAudio').replaceChildren();
@@ -75,7 +79,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
     const buttons = get('roomButtons'); buttons.replaceChildren();
     function button(label, href, section = false, id = '') {
-      const link = document.createElement('a'); link.className = 'btn btn-guide'; link.textContent = label; link.href = href;
+      const link = document.createElement('a'); link.className = 'btn btn-guide'; link.textContent = label; link.href = section && !preview ? window.location.pathname+href : href;
       if (id) link.id = id;
       if (section) link.addEventListener('click', event => {
         event.preventDefault();
@@ -92,7 +96,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     get('roomVideo').replaceChildren();
     for (const source of room.videos || []) {
       const url = usableURL(source); if (!url || /^(mailto|tel):/.test(url)) continue;
-      const player = document.createElement('video'); player.controls = true; player.preload = 'metadata'; player.className = 'video-player'; player.src = url;
+      const player = document.createElement('video'); player.controls = true; player.preload = 'metadata'; player.playsInline=true; player.addEventListener('loadedmetadata',()=>{if(player.videoWidth&&player.videoHeight)player.style.aspectRatio=player.videoWidth+'/'+player.videoHeight;}); player.className = 'video-player'; player.src = url;
       get('roomVideo').append(player);
     }
     get('video').hidden = !get('roomVideo').childElementCount;
@@ -101,10 +105,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     for (const [index, source] of (room.pdfs || []).entries()) {
       const url = usableURL(source); if (!url || /^(mailto|tel):/.test(url)) continue;
       const link = document.createElement('a'); link.className = 'btn btn-guide'; link.href = url; link.textContent = 'Download PDF' + (room.pdfs.length > 1 ? ' ' + (index + 1) : '');
-      link.download = source.startsWith('./audio/') ? source.split('/').pop() : 'documento.pdf';
       link.target = '_blank'; link.rel = 'noopener noreferrer';
-      link.addEventListener('click', event => {
-      if(!preview){event.preventDefault();setMenu(false);setTimeout(()=>window.location.assign(link.href),window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:300);return;}
+      if(preview)link.addEventListener('click', event => {
         event.preventDefault(); parent.postMessage({ type: 'PREVIEW_DOWNLOAD_PDF', token: MUSEUM_PREVIEW.token, roomId: id, index }, '*');
       });
       get('roomPDF').append(link);
@@ -138,7 +140,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   function addRoom(room) {
     const item = document.createElement('li');
     const link = document.createElement('a');
-    link.href = '?room=' + encodeURIComponent(room.id);
+    link.href = preview ? '#'+encodeURIComponent(room.id) : new URL('./'+room.path,document.baseURI).href;
     link.className = 'menu-link';
     link.dataset.room = room.id;
     link.addEventListener('click', event => {
@@ -164,10 +166,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     welcome.forEach(addRoom); if(welcome.length)addDivider();
     const filterItem=document.createElement('li'), select=document.createElement('select');select.className='menu-location-filter';select.setAttribute('aria-label',menuConfig.filterPlaceholder || 'Scegli una posizione');
     const placeholder=new Option(menuConfig.filterPlaceholder || 'Scegli una posizione','');placeholder.disabled=true;placeholder.selected=!location;select.append(placeholder,new Option('Tutti','__all__'));
-    const options=[...new Set(rooms.filter(room=>!welcome.includes(room)).map(room=>room.location).filter(Boolean))];
+    const options=[...new Set(rooms.filter(room=>!welcome.includes(room)).map(room=>room.filterLocation).filter(Boolean))];
     options.forEach(value=>select.append(new Option(value,value)));if(location)select.value=location;
     select.addEventListener('change',()=>renderMenu(select.value));filterItem.append(select);menuList.append(filterItem);
-    const candidates=rooms.filter(room=>!welcome.includes(room) && (!location || location==='__all__' || room.location===location));
+    const candidates=rooms.filter(room=>!welcome.includes(room) && (!location || location==='__all__' || room.filterLocation===location));
     candidates.forEach(addRoom);
   }
   renderMenu();
@@ -199,11 +201,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const d=e.data||{};
     if(d.type==='CACHE_PROGRESS')show('Caricamento risorse / Loading resources: '+d.done+'/'+d.total);
     if(d.type==='CACHE_COMPLETE'){ready=true;show('Audio e video pronti offline / Audio & video ready offline ✓',true)}
-    if(d.type==='CACHE_ERROR'){ready=false;show('Download incompleto / Download incomplete — riprova');retry.hidden=false}
+    if(d.type==='CACHE_ERROR'){ready=false;show('Download incompleto / Download incomplete — '+(d.failedFiles?.length?d.failedFiles.slice(0,3).map(file=>{let name=file.url.split('/').pop();try{name=decodeURIComponent(name);}catch{}return name+' ('+file.error+')';}).join(' · '):'riprova'));retry.hidden=false}
   });
   window.addEventListener('online',request);
   window.addEventListener('offline',()=>show(ready?'Modalità offline / Offline — audio e video disponibili':'Offline — download incompleto / Download incomplete'));
   retry.addEventListener('click',request);
   if(!('serviceWorker' in navigator)||!window.isSecureContext){show('Offline disponibile su HTTPS o localhost / Offline requires HTTPS or localhost');return}
-  navigator.serviceWorker.register('./sw.js').then(()=>navigator.serviceWorker.ready).then(reg=>{worker=reg.active;request()}).catch(()=>{show('Impossibile attivare offline / Could not enable offline');retry.hidden=false});
+  navigator.serviceWorker.register(new URL('./sw.js',document.baseURI).href).then(()=>navigator.serviceWorker.ready).then(reg=>{worker=reg.active;request()}).catch(()=>{show('Impossibile attivare offline / Could not enable offline');retry.hidden=false});
 })();
