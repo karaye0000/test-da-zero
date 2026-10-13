@@ -14,6 +14,77 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.addEventListener('play',event=>{if(!event.target.matches('audio,video'))return;document.querySelectorAll('audio,video').forEach(player=>{if(player!==event.target)player.pause();});},true);
   const get = id => document.getElementById(id);
+  function mediaPlayer(media, kind) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'media-player media-player-' + kind;
+    media.controls = false;
+    media.disableRemotePlayback = true;
+    media.setAttribute('x-webkit-airplay', 'deny');
+    media.setAttribute('controlslist', 'noremoteplayback noplaybackrate nodownload');
+    if (kind === 'video') media.disablePictureInPicture = true;
+    const controls = document.createElement('div'); controls.className = 'media-controls';
+    const action = (label, text, handler) => {
+      const button = document.createElement('button'); button.type = 'button'; button.className = 'media-action';
+      button.setAttribute('aria-label', label); button.title = label; button.textContent = text;
+      button.addEventListener('click', handler); controls.append(button); return button;
+    };
+    const play = action('Riproduci', '▶', async () => {
+      if (!media.paused) { media.pause(); return; }
+      try { await media.play(); } catch { status.textContent = 'Impossibile riprodurre il file.'; }
+    });
+    const seek = document.createElement('input'); seek.type = 'range'; seek.min = '0'; seek.max = '100'; seek.step = '0.1'; seek.value = '0'; seek.disabled = true;
+    seek.className = 'media-seek'; seek.setAttribute('aria-label', 'Posizione di riproduzione'); controls.append(seek);
+    const time = document.createElement('span'); time.className = 'media-time'; time.textContent = '0:00 / 0:00'; controls.append(time);
+    const mute = action('Disattiva audio', '♪', () => { media.muted = !media.muted; });
+    const status = document.createElement('p'); status.className = 'media-error'; status.setAttribute('role','status');
+    const formatTime = value => { const seconds = Number.isFinite(value) ? Math.floor(value) : 0; return Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0'); };
+    function update() {
+      const ready = Number.isFinite(media.duration) && media.duration > 0;
+      seek.disabled = !ready; seek.value = ready ? media.currentTime / media.duration * 100 : 0;
+      time.textContent = formatTime(media.currentTime) + ' / ' + formatTime(media.duration);
+      play.textContent = media.paused ? '▶' : 'Ⅱ'; play.setAttribute('aria-label', media.paused ? 'Riproduci' : 'Pausa'); play.title = media.paused ? 'Riproduci' : 'Pausa';
+      mute.textContent = media.muted ? '×♪' : '♪'; mute.setAttribute('aria-label',media.muted ? 'Attiva audio' : 'Disattiva audio');
+      mute.setAttribute('aria-pressed', String(media.muted));
+    }
+    for (const event of ['loadedmetadata', 'durationchange', 'timeupdate', 'play', 'pause', 'ended', 'volumechange']) media.addEventListener(event, update);
+    media.addEventListener('playing', () => { status.textContent = ''; });
+    media.addEventListener('error', () => { status.textContent = 'Impossibile riprodurre il file.'; });
+    seek.addEventListener('input', () => { if (Number.isFinite(media.duration)) media.currentTime = +seek.value / 100 * media.duration; });
+    if (kind === 'video') {
+      const fullscreen = action('Schermo intero', '⛶', async () => {
+        try {
+          if (document.fullscreenElement) await document.exitFullscreen();
+          else if (wrapper.requestFullscreen) await wrapper.requestFullscreen();
+          else if (media.webkitEnterFullscreen) media.webkitEnterFullscreen();
+        } catch { status.textContent = 'Schermo intero non disponibile.'; }
+      });
+      fullscreen.hidden = !wrapper.requestFullscreen && !media.webkitEnterFullscreen;
+      media.addEventListener('click', () => play.click());
+    }
+    wrapper.append(media, controls, status);
+    const color = getComputedStyle(document.documentElement).getPropertyValue('--' + kind + '-player-color').trim() || '#f5f5f5';
+    const rgb = color.slice(1).match(/.{2}/g)?.map(value => parseInt(value,16));
+    if (rgb?.length === 3) wrapper.style.setProperty('--player-ink', rgb[0]*.299+rgb[1]*.587+rgb[2]*.114 < 145 ? '#ffffff' : '#111111');
+    return wrapper;
+  }
+
+  function updateTextToggles() {
+    document.querySelectorAll('.expandable').forEach(block => {
+      const teaser = block.querySelector('.expandable-teaser'), toggle = block.querySelector('.expandable-toggle');
+      if (block.classList.contains('open')) return;
+      const lineHeight = parseFloat(getComputedStyle(teaser).lineHeight) || 26;
+      teaser.style.maxHeight = (lineHeight * 3) + 'px';
+      const overflow = teaser.scrollHeight > lineHeight * 3 + 1;
+      toggle.hidden = !overflow;
+      if (!overflow) toggle.textContent = toggle.dataset.more;
+    });
+  }
+  window.addEventListener('resize', updateTextToggles);
+  document.fonts?.ready.then(updateTextToggles);
+  if (typeof ResizeObserver !== 'undefined') {
+    let textWidth = -1;
+    new ResizeObserver(entries => { const width = entries[0].contentRect.width; if (width !== textWidth) { textWidth = width; updateTextToggles(); } }).observe(get('roomTexts'));
+  }
   function fitFooterLogos(){document.querySelectorAll('.footer-logo-row').forEach(row=>{const images=[...row.querySelectorAll('img')],gap=Math.min(parseFloat(getComputedStyle(row).getPropertyValue('--footer-block-gap'))||0,Math.max(0,row.clientWidth-images.length)/Math.max(1,images.length-1));row.style.gap=gap+'px';const desired=images.map(image=>({image,height:Number(image.dataset.logoHeight)||32,ratio:image.naturalWidth/Math.max(1,image.naturalHeight)}));if(desired.some(item=>!item.image.complete||!item.ratio))return;const width=desired.reduce((sum,item)=>sum+item.ratio*item.height,0),scale=Math.min(1,Math.max(1,row.clientWidth-gap*(images.length-1))/Math.max(1,width));desired.forEach(({image,height,ratio})=>{image.style.height=height*scale+'px';image.style.width=height*ratio*scale+'px';});});}
   document.querySelectorAll('.footer-logo-row img').forEach(image=>image.addEventListener('load',fitFooterLogos));window.addEventListener('resize',fitFooterLogos);if(typeof ResizeObserver!=='undefined')document.querySelectorAll('.footer-logo-row').forEach(row=>new ResizeObserver(fitFooterLogos).observe(row));fitFooterLogos();
   const updateHeaderHeight = () => document.documentElement.style.setProperty('--header-height', get('top').offsetHeight + 'px');
@@ -40,8 +111,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         block.lang = language;
         const labels = { it: ['Leggi di più', 'Leggi di meno'], en: ['Read More', 'Read Less'], fr: ['Lire la suite', 'Réduire'], de: ['Mehr lesen', 'Weniger lesen'], es: ['Leer más', 'Leer menos'] };
         const [more, less] = labels[language.split('-')[0]] || labels.en;
-        block.innerHTML = '<div class="expandable-preview"><p class="expandable-teaser"></p></div><div class="expandable-full"></div><button class="expandable-toggle"></button>';
-        block.querySelector('.expandable-teaser').textContent = text.preview;
+        block.innerHTML = '<div class="expandable-preview"><div class="expandable-teaser"></div></div><div class="expandable-full"></div><button class="expandable-toggle"></button>';
+        block.querySelector('.expandable-teaser').innerHTML = text.full;
         block.querySelector('.expandable-full').innerHTML = text.full;
         const toggle = block.querySelector('button');
         toggle.textContent = toggle.dataset.more = more;
@@ -69,7 +140,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (index) audio.id += '-' + (index + 1);
         audio.src = source;
         if (!index) block.append(label);
-        block.append(audio);
+        block.append(mediaPlayer(audio, 'audio'));
         get('roomAudio').append(block);
     }
     const usableURL = value => {
@@ -97,7 +168,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     for (const source of room.videos || []) {
       const url = usableURL(source); if (!url || /^(mailto|tel):/.test(url)) continue;
       const player = document.createElement('video'); player.controls = true; player.preload = 'metadata'; player.playsInline=true; player.addEventListener('loadedmetadata',()=>{if(player.videoWidth&&player.videoHeight)player.style.aspectRatio=player.videoWidth+'/'+player.videoHeight;}); player.className = 'video-player'; player.src = url;
-      get('roomVideo').append(player);
+      get('roomVideo').append(mediaPlayer(player, 'video'));
     }
     get('video').hidden = !get('roomVideo').childElementCount;
     if (!get('video').hidden) button('Video', '#video', true);
@@ -125,6 +196,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       section.classList.toggle('has-divider', !section.hidden && visible > 0);
       if (!section.hidden) visible++;
     });
+    updateTextToggles();
     animateElements();
     document.title = room.title.replace(/<br>/g, ' — ') + ' — Genius Loci';
     if (preview) parent.postMessage({ type: 'PREVIEW_ROOM', token: MUSEUM_PREVIEW.token, roomId: id }, '*');
