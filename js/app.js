@@ -195,17 +195,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 (function museumPWA(){
   const banner=document.getElementById('cacheBanner'),text=document.getElementById('cacheText'),retry=document.getElementById('cacheRetry');
   let worker,ready=false,timer;
-  function show(message,complete=false){clearTimeout(timer);banner.classList.remove('hidden');banner.classList.toggle('ready',complete);text.textContent=message;retry.hidden=true;if(complete)timer=setTimeout(()=>banner.classList.add('hidden'),4000)}
-  function request(){if(!navigator.onLine){show('Connessione assente / Offline — riconnettiti per completare il download');return}if(worker)worker.postMessage({type:'CACHE_RESOURCES'})}
+  function show(message,complete=false){clearTimeout(timer);banner.classList.remove('hidden');banner.classList.toggle('ready',complete);text.textContent=message;text.title=message;retry.hidden=true;if(complete)timer=setTimeout(()=>banner.classList.add('hidden'),4000)}
+  function request(){if(!navigator.onLine){show('Connessione assente: riconnettiti per completare il download');return}if(worker)worker.postMessage({type:'CACHE_RESOURCES'})}
   navigator.serviceWorker?.addEventListener('message',e=>{
     const d=e.data||{};
-    if(d.type==='CACHE_PROGRESS')show('Caricamento risorse / Loading resources: '+d.done+'/'+d.total);
-    if(d.type==='CACHE_COMPLETE'){ready=true;show('Audio e video pronti offline / Audio & video ready offline ✓',true)}
-    if(d.type==='CACHE_ERROR'){ready=false;show('Download incompleto / Download incomplete — '+(d.failedFiles?.length?d.failedFiles.slice(0,3).map(file=>{let name=file.url.split('/').pop();try{name=decodeURIComponent(name);}catch{}return name+' ('+file.error+')';}).join(' · '):'riprova'));retry.hidden=false}
+    if(d.type==='CACHE_PROGRESS')show('Download risorse: '+d.done+'/'+d.total);
+    if(d.type==='CACHE_COMPLETE'){ready=true;show('Risorse disponibili offline ✓',true)}
+    if(d.type==='CACHE_ERROR'){ready=false;show('Download incompleto: '+(d.failedFiles?.length?d.failedFiles.slice(0,3).map(file=>{let name=file.url.split('/').pop();try{name=decodeURIComponent(name);}catch{}return name+' ('+file.error+')';}).join(' · '):'riprova'));retry.hidden=false}
   });
   window.addEventListener('online',request);
-  window.addEventListener('offline',()=>show(ready?'Modalità offline / Offline — audio e video disponibili':'Offline — download incompleto / Download incomplete'));
+  window.addEventListener('offline',()=>show(ready?'Modalità offline: risorse disponibili':'Offline: download incompleto'));
   retry.addEventListener('click',request);
-  if(!('serviceWorker' in navigator)||!window.isSecureContext){show('Offline disponibile su HTTPS o localhost / Offline requires HTTPS or localhost');return}
-  navigator.serviceWorker.register(new URL('./sw.js',document.baseURI).href).then(()=>navigator.serviceWorker.ready).then(reg=>{worker=reg.active;request()}).catch(()=>{show('Impossibile attivare offline / Could not enable offline');retry.hidden=false});
+  if(!('serviceWorker' in navigator)||!window.isSecureContext){show('Offline disponibile su HTTPS o localhost');return}
+  navigator.serviceWorker.register(new URL('./sw.js',document.baseURI).href).then(()=>navigator.serviceWorker.ready).then(reg=>{worker=reg.active;request()}).catch(()=>{show('Impossibile attivare la modalità offline');retry.hidden=false});
 })();

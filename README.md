@@ -13,6 +13,7 @@ PWA attiva. Usa HTTPS. Visita il sito online e attendi il completamento del down
 - pannello-03 — 3: https://karaye0000.github.io/test-da-zero/piano-1/pannello-03/
 - pannello-04 — 4: https://karaye0000.github.io/test-da-zero/piano-1/pannello-04/
 - pannello-05 — 5: https://karaye0000.github.io/test-da-zero/piano-0/pannello-05/
+- colophon — Colophon: https://karaye0000.github.io/test-da-zero/colophon/
 
 La lista è disponibile anche in QR-links.csv. Senza indirizzo di pubblicazione, i percorsi sono relativi e vanno completati prima di usarli nei QR.
 
