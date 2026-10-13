@@ -32,35 +32,25 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!media.paused) { media.pause(); return; }
       try { await media.play(); } catch { status.textContent = 'Impossibile riprodurre il file.'; }
     });
+    const playIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>';
+    const pauseIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h4v16H6zm8 0h4v16h-4z"/></svg>';
+    play.innerHTML = playIcon;
     const seek = document.createElement('input'); seek.type = 'range'; seek.min = '0'; seek.max = '100'; seek.step = '0.1'; seek.value = '0'; seek.disabled = true;
     seek.className = 'media-seek'; seek.setAttribute('aria-label', 'Posizione di riproduzione'); controls.append(seek);
     const time = document.createElement('span'); time.className = 'media-time'; time.textContent = '0:00 / 0:00'; controls.append(time);
-    const mute = action('Disattiva audio', '♪', () => { media.muted = !media.muted; });
     const status = document.createElement('p'); status.className = 'media-error'; status.setAttribute('role','status');
     const formatTime = value => { const seconds = Number.isFinite(value) ? Math.floor(value) : 0; return Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0'); };
     function update() {
       const ready = Number.isFinite(media.duration) && media.duration > 0;
       seek.disabled = !ready; seek.value = ready ? media.currentTime / media.duration * 100 : 0;
       time.textContent = formatTime(media.currentTime) + ' / ' + formatTime(media.duration);
-      play.textContent = media.paused ? '▶' : 'Ⅱ'; play.setAttribute('aria-label', media.paused ? 'Riproduci' : 'Pausa'); play.title = media.paused ? 'Riproduci' : 'Pausa';
-      mute.textContent = media.muted ? '×♪' : '♪'; mute.setAttribute('aria-label',media.muted ? 'Attiva audio' : 'Disattiva audio');
-      mute.setAttribute('aria-pressed', String(media.muted));
+      play.innerHTML = media.paused ? playIcon : pauseIcon; play.setAttribute('aria-label', media.paused ? 'Riproduci' : 'Pausa'); play.title = media.paused ? 'Riproduci' : 'Pausa';
     }
     for (const event of ['loadedmetadata', 'durationchange', 'timeupdate', 'play', 'pause', 'ended', 'volumechange']) media.addEventListener(event, update);
     media.addEventListener('playing', () => { status.textContent = ''; });
     media.addEventListener('error', () => { status.textContent = 'Impossibile riprodurre il file.'; });
     seek.addEventListener('input', () => { if (Number.isFinite(media.duration)) media.currentTime = +seek.value / 100 * media.duration; });
-    if (kind === 'video') {
-      const fullscreen = action('Schermo intero', '⛶', async () => {
-        try {
-          if (document.fullscreenElement) await document.exitFullscreen();
-          else if (wrapper.requestFullscreen) await wrapper.requestFullscreen();
-          else if (media.webkitEnterFullscreen) media.webkitEnterFullscreen();
-        } catch { status.textContent = 'Schermo intero non disponibile.'; }
-      });
-      fullscreen.hidden = !wrapper.requestFullscreen && !media.webkitEnterFullscreen;
-      media.addEventListener('click', () => play.click());
-    }
+    if (kind === 'video') media.addEventListener('click', () => play.click());
     wrapper.append(media, controls, status);
     const color = getComputedStyle(document.documentElement).getPropertyValue('--' + kind + '-player-color').trim() || '#f5f5f5';
     const rgb = color.slice(1).match(/.{2}/g)?.map(value => parseInt(value,16));
